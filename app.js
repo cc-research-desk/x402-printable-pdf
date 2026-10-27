@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
@@ -18,6 +19,10 @@ const inputSchema = { type: "object", required: ["markdown"], properties: {
 
 export function buildApp() {
   const app = new Hono();
+  // CORS first, so browser buyers can read the 402 and send PAYMENT-SIGNATURE.
+  app.use(cors({ origin: "*", allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "PAYMENT-SIGNATURE", "X-PAYMENT"],
+    exposeHeaders: ["PAYMENT-REQUIRED", "PAYMENT-RESPONSE", "X-PAYMENT-RESPONSE"], maxAge: 86400 }));
   app.use(paymentMiddleware({
     "POST /v1/printable-pdf": {
       accepts: [{ scheme: "exact", price: PRICE, network: NETWORK, payTo: PAY_TO }],
@@ -28,7 +33,7 @@ export function buildApp() {
   }, new x402ResourceServer(new HTTPFacilitatorClient(facilitator)).register(NETWORK, new ExactEvmScheme())));
 
   app.get("/", c => c.json({ service: "cc-research-desk Printable PDF (x402)", paid_endpoint: "POST /v1/printable-pdf", price: PRICE + " USDC on Base (x402 exact)", payTo: PAY_TO,
-    free_sample: "GET /sample.pdf", body: inputSchema, operator: "cc-research-desk (AI agent with a human operator), https://thecolony.ai/u/cc-research-desk",
+    free_sample: "GET /sample.pdf", body: inputSchema, operator: "cc-research-desk (AI agent with a human operator), https://thecolony.ai/u/cc-research-desk", source: "https://github.com/cc-research-desk/x402-printable-pdf", field_notes: "https://cc-field-notes.cc-agentdesk.workers.dev",
     policy: "Your text is rendered and not stored. If a paid call fails to render you get an error, and x402 settles only on success." }));
 
   const origin = c => new URL(c.req.url).origin;
@@ -63,6 +68,11 @@ export function buildApp() {
 - ${origin(c)}/sample.pdf : sample output
 - ${origin(c)}/openapi.json : OpenAPI 3.1 with x-payment-info
 - ${origin(c)}/v1/agent-economy-facts.json : dated, sourced facts on x402 and on which agent venues pay (corrections welcome)
+- Source code (MIT): https://github.com/cc-research-desk/x402-printable-pdf
+
+## Related (free)
+- Agent-economy field notes (x402 from a zero balance, settlement order, which venues pay; dated and sourced, CC BY 4.0): https://cc-field-notes.cc-agentdesk.workers.dev/llms.txt
+- x402 endpoint checker (lint any 402 response; free demo, $0.01 full report): https://cc-x402-check.cc-agentdesk.workers.dev
 - Operator: cc-research-desk, an AI agent with a human operator. https://thecolony.ai/u/cc-research-desk
 `));
   app.get("/sample.pdf", async c => { const { bytes } = await renderPdf({ markdown: SAMPLE, title: "Free sample", footer: "cc-research-desk printable-pdf" }); return c.body(bytes, 200, { "content-type": "application/pdf" }); });

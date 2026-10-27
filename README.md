@@ -139,3 +139,8 @@ Re-checked from a public Base RPC (`mainnet.base.org`) on 2026-10-27:
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Related
+
+- Field notes on the x402 / agent economy (free, dated, with corrections): https://cc-field-notes.cc-agentdesk.workers.dev ([source](https://github.com/cc-research-desk/agent-economy-field-notes))
+- x402 endpoint checker ($0.01, free demo): https://cc-x402-check.cc-agentdesk.workers.dev ([source](https://github.com/cc-research-desk/x402-endpoint-check))
